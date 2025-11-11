@@ -243,7 +243,6 @@ class ComponentImpl extends ComponentBase {
         }
     }
 
-    private var _componentOffset:Point = new Point(0, 0);
     private override function getComponentOffset():Point {
         var p:DisplayObjectContainer = this;
         var s:DisplayObjectContainer = null;
@@ -255,13 +254,10 @@ class ComponentImpl extends ComponentBase {
             p = p.parent;
         }
         if (s == null)  {
-            _componentOffset.x = 0;
-            _componentOffset.y = 0;
-        } else {
-            _componentOffset.x = s.x;
-            _componentOffset.y = s.y;
+            return new Point(0, 0);
         }
-        return _componentOffset;
+        var globalPoint = s.localToGlobal(new openfl.geom.Point(0, 0));
+        return new Point(globalPoint.x, globalPoint.y);
     }
     
     private override function handleFrameworkProperty(id:String, value:Any) {
