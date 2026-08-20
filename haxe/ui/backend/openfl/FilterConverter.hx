@@ -14,6 +14,25 @@ import haxe.ui.backend.openfl.filters.InvertFilter;
 import haxe.ui.backend.openfl.filters.BrightnessFilter;
 
 class FilterConverter {
+    /**
+     * The per-pass alpha that renders as the alpha the style asked for.
+     *
+     * DropShadowFilter tints on every blur pass rather than once at the end,
+     * and there are round(blur * quality / 4) + 1 passes per axis, so an alpha
+     * handed straight over comes out far darker than a browser would paint the
+     * same rule: 0.1 across a 6px blur renders nearer 0.5.
+     */
+    private static function shadowAlpha(alpha:Float, blurX:Float, blurY:Float):Float {
+        if (alpha <= 0 || alpha >= 1) {
+            return alpha;
+        }
+
+        var quality:Int = BitmapFilterQuality.HIGH;
+        var passes = Math.round(blurX * quality / 4) + 1 + Math.round(blurY * quality / 4) + 1;
+
+        return Math.pow(alpha, 1 / passes);
+    }
+
     public static function convertFilter(input:Filter):BitmapFilter {
         if (input == null) {
             return null;
@@ -27,7 +46,7 @@ class FilterConverter {
             output = new DropShadowFilter(inputDropShadow.distance + 1,
                                           inputDropShadow.angle,
                                           inputDropShadow.color,
-                                          .9,
+                                          shadowAlpha(inputDropShadow.alpha, inputDropShadow.blurX, inputDropShadow.blurY),
                                           inputDropShadow.blurX,
                                           inputDropShadow.blurY,
                                           1,
