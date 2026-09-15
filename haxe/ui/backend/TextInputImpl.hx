@@ -1,8 +1,10 @@
 package haxe.ui.backend;
 
 import haxe.ui.data.DataSource;
+import haxe.ui.focus.IFocusable;
 import haxe.ui.validation.InvalidationFlags;
 import openfl.events.Event;
+import openfl.events.FocusEvent;
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFieldType;
@@ -16,6 +18,8 @@ class TextInputImpl extends TextDisplayImpl {
         
         textField.addEventListener(Event.CHANGE, onChange, false, 0, true);
         textField.addEventListener(Event.SCROLL, onScroll, false, 0, true);
+        textField.addEventListener(FocusEvent.FOCUS_IN, onFocusIn, false, 0, true);
+        textField.addEventListener(FocusEvent.FOCUS_OUT, onFocusOut, false, 0, true);
         _inputData.vscrollPageStep = 1;
         _inputData.vscrollNativeWheel = true;
     }
@@ -58,6 +62,8 @@ class TextInputImpl extends TextDisplayImpl {
             }
             textField.removeEventListener(Event.CHANGE, onChange);
             textField.removeEventListener(Event.SCROLL, onScroll);
+            textField.removeEventListener(FocusEvent.FOCUS_IN, onFocusIn);
+            textField.removeEventListener(FocusEvent.FOCUS_OUT, onFocusOut);
             textField = null;
         }    
         super.dispose();
@@ -203,6 +209,25 @@ class TextInputImpl extends TextDisplayImpl {
         }
     }
     
+    // The stage moves native focus on its own (window blur); the component has to follow.
+    private function onFocusIn(e:FocusEvent) {
+        syncFocus(true);
+    }
+
+    private function onFocusOut(e:FocusEvent) {
+        syncFocus(false);
+    }
+
+    private function syncFocus(value:Bool) {
+        if (parentComponent == null || !(parentComponent is IFocusable)) {
+            return;
+        }
+        var focusable:IFocusable = cast parentComponent;
+        if (focusable.focus != value) {
+            focusable.focus = value;
+        }
+    }
+
     private function onScroll(e) {
         if (_inputData.vscrollPos - textField.scrollV > 2) { // weird openfl bug - randomly throws out scroll event and scrollV = 1
             return;
